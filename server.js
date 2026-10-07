@@ -1,14 +1,18 @@
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 require("dotenv").config();
 const express = require("express");
 const { engine } = require("express-handlebars");
 const mongoose = require("mongoose");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
+const connectMongo = require("connect-mongo");
+const MongoStore = connectMongo.default || connectMongo;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MSSV = process.env.MSSV || "23IT002";
-const STUDENT_NAME = process.env.STUDENT_NAME || "Sinh Viên";
+const STUDENT_NAME = process.env.STUDENT_NAME || "Đoàn Quang Tuấn An";
 
 const lastDigit = parseInt(MSSV.slice(-1), 10);
 const vatRate = lastDigit + 4; // 2 + 4 = 6%
