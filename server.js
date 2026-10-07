@@ -2,11 +2,13 @@ require("dotenv").config();
 const express = require("express");
 const { engine } = require("express-handlebars");
 const mongoose = require("mongoose");
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MSSV = process.env.MSSV || "23IT002";
-const STUDENT_NAME = process.env.STUDENT_NAME || "Đoàn Quang Tuấn An";
+const STUDENT_NAME = process.env.STUDENT_NAME || "Sinh Viên";
 
 const lastDigit = parseInt(MSSV.slice(-1), 10);
 const vatRate = lastDigit + 4; // 2 + 4 = 6%
@@ -14,6 +16,21 @@ const prefix = MSSV.slice(-3); // '002'
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Cấu hình Stateless Session lưu trực tiếp trên Cloud MongoDB Atlas
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET || "secret_23it002",
+        resave: false,
+        saveUninitialized: false,
+        store: MongoStore.create({
+            mongoUrl: process.env.MONGO_URI_WRITE,
+            collectionName: "sessions",
+            ttl: 24 * 60 * 60,
+        }),
+        cookie: { maxAge: 24 * 60 * 60 * 1000 },
+    }),
+);
 
 app.engine("hbs", engine({ extname: ".hbs" }));
 app.set("view engine", "hbs");
@@ -33,13 +50,12 @@ const bookSchema = new mongoose.Schema({
 const BookReadModel = readConn.model("Book", bookSchema);
 const BookWriteModel = writeConn.model("Book", bookSchema);
 
-// Middleware kiểm tra tiền tố 3 số cuối MSSV
 function validateBookCode(req, res, next) {
     const { bookCode } = req.body;
     if (!bookCode || !bookCode.startsWith(prefix)) {
         return res.status(400).render("index", {
             error: `Lỗi: Mã sản phẩm bắt buộc phải có tiền tố là 3 số cuối MSSV (${prefix})`,
-            books: [],
+            books: req.session.cachedBooks || [],
             vatRate,
             studentName: STUDENT_NAME,
             mssv: MSSV,
@@ -51,6 +67,7 @@ function validateBookCode(req, res, next) {
 app.get("/", async (req, res) => {
     try {
         const books = await BookReadModel.find().lean();
+        req.session.cachedBooks = books;
         res.render("index", { books, vatRate, studentName: STUDENT_NAME, mssv: MSSV });
     } catch (err) {
         res.status(500).send("Lỗi đọc database: " + err.message);
