@@ -1,0 +1,54 @@
+<h2>Quản Lý Sách Trực Tuyến</h2>
+
+{{#if error}}
+    <p class="error">{{error}}</p>
+{{/if}}
+
+<form action="/books" method="POST">
+    <h3>Thêm sách mới</h3>
+    <p><em>* Lưu ý: Mã sách bắt buộc phải bắt đầu bằng: <strong>002</strong></em></p>
+    <div>
+        <label>Mã sách:</label><br />
+        <input type="text" name="bookCode" placeholder="Ví dụ: 002-KHOA-HOC" required />
+    </div>
+    <br />
+    <div>
+        <label>Tên sách:</label><br />
+        <input type="text" name="title" required />
+    </div>
+    <br />
+    <div>
+        <label>Giá gốc (VNĐ):</label><br />
+        <input type="number" name="basePrice" min="0" required />
+    </div>
+    <br />
+    <button type="submit" class="btn">Lưu sách lên Cloud</button>
+</form>
+
+<hr />
+
+<h3>Danh sách sách hiện có</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Mã sách</th>
+            <th>Tên sách</th>
+            <th>Giá gốc</th>
+            <th>Giá sau thuế ({{vatRate}}%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each books}}
+            <tr>
+                <td>{{this.bookCode}}</td>
+                <td>{{this.title}}</td>
+                <td>{{this.basePrice}} VNĐ</td>
+                <td><strong>{{this.finalPrice}} VNĐ</strong></td>
+            </tr>
+        {{else}}
+            <tr>
+                <td colspan="4">Chưa có dữ liệu sách.</td>
+            </tr>
+        {{/each}}
+    </tbody>
+</table>
